@@ -1,0 +1,306 @@
+import os
+import csv
+import io
+import re
+import sqlite3
+import smtplib
+from email.message import EmailMessage
+from flask import (
+    Flask, render_template, request, jsonify,
+    redirect, url_for, session, flash, g, Response
+)
+from flask_login import (
+    LoginManager, UserMixin, login_user, logout_user,
+    login_required, current_user
+)
+from werkzeug.security import generate_password_hash, check_password_hash
+
+app = Flask(__name__)
+app.secret_key = os.urandom(32)
+
+login_manager = LoginManager()
+login_manager.login_view = 'login'
+login_manager.init_app(app)
+
+DATABASE = './data_center_approval.db'
+
+# === SMTP Email Configuration ===
+# You should replace these values with your actual SMTP server details.
+SMTP_SERVER = os.environ.get('SMTP_SERVER', 'smtp.example.com')
+SMTP_PORT = int(os.environ.get('SMTP_PORT', 587))
+SMTP_USERNAME = os.environ.get('SMTP_USERNAME', 'your_username@example.com')
+SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD', 'your_password')
+EMAIL_SENDER = os.environ.get('EMAIL_SENDER', 'noreply@datacenter.com')  # The from email address
+
+def send_email(subject: str, body: str, recipients: list):
+    """
+    Send an email using SMTP server.
+    :param subject: Subject of the email.
+    :param body: Plain text body.
+    :param recipients: List of recipient email addresses.
+    """
+    if not recipients:
+        # No recipients to send to.
+        return
+    msg = EmailMessage()
+    msg['Subject'] = subject
+    msg['From'] = EMAIL_SENDER
+    msg['To'] = ', '.join(recipients)
+    msg.set_content(body)
+
+    try:
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as smtp:
+            smtp.starttls()
+            smtp.login(SMTP_USERNAME, SMTP_PASSWORD)
+            smtp.send_message(msg)
+        app.logger.info(f"Email sent to {recipients} with subject: {subject}")
+    except Exception as e:
+        app.logger.error(f"Failed to send email: {e}")
+
+def get_user_emails_by_role(role):
+    """
+    Retrieve list of email addresses of users assigned the specified role.
+    In this app, we don't have email stored explicitly, so assume username is email or full_name.
+    For a real app, adapt accordingly.
+    Here, let's assume username field is the email for simplicity.
+    """
+    db = get_db()
+    c = db.cursor()
+    c.execute('SELECT username FROM users WHERE role = ?', (role,))
+    rows = c.fetchall()
+    return [row['username'] for row in rows if '@' in row['username']]
+
+def get_user_email_by_id(user_id):
+    db = get_db()
+    c = db.cursor()
+    c.execute('SELECT username FROM users WHERE id = ?', (user_id,))
+    row = c.fetchone()
+    if row and '@' in row['username']:
+        return row['username']
+    return None
+
+def get_user_fullname_by_id(user_id):
+    db = get_db()
+    c = db.cursor()
+    c.execute('SELECT full_name FROM users WHERE id = ?', (user_id,))
+    row = c.fetchone()
+    if row:
+        return row['full_name']
+    return None
+
+def get_db():
+    db = getattr(g, '_database', None)
+    if db is None:
+        db = g._database = sqlite3.connect(DATABASE)
+        db.row_factory = sqlite3.Row
+    return db
+
+def init_db():
+    with app.app_context():
+        db = get_db()
+        c = db.cursor()
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT UNIQUE NOT NULL,
+                password_hash TEXT NOT NULL,
+                role TEXT NOT NULL CHECK(role IN ('requester','approver1','approver2','admin')),
+                full_name TEXT NOT NULL
+            )
+        ''')
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS requests (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                laptop_details TEXT NOT NULL,
+                requester_name TEXT NOT NULL,
+                company TEXT NOT NULL,
+                contact TEXT NOT NULL,
+                purpose TEXT NOT NULL,
+                entry_date TEXT NOT NULL,
+                status_level1 TEXT NOT NULL CHECK(status_level1 IN ('pending','approved','denied')) DEFAULT 'pending',
+                comments_level1 TEXT,
+                status_level2 TEXT NOT NULL CHECK(status_level2 IN ('pending','approved','denied')) DEFAULT 'pending',
+                comments_level2 TEXT,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                created_by INTEGER NOT NULL,
+                FOREIGN KEY(created_by) REFERENCES users(id)
+            )
+        ''')
+        db.commit()
+        c.execute('SELECT COUNT(*) FROM users')
+        if c.fetchone()[0] == 0:
+            users = [
+                ('alice@example.com', generate_password_hash('password123'), 'requester', 'Alice Requester'),
+                ('bob@example.com', generate_password_hash('password123'), 'approver1', 'Bob Approver1'),
+                ('carol@example.com', generate_password_hash('password123'), 'approver2', 'Carol Approver2'),
+                ('dave@example.com', generate_password_hash('password123'), 'admin', 'Dave Admin')
+            ]
+            c.executemany('INSERT INTO users (username, password_hash, role, full_name) VALUES (?, ?, ?, ?)', users)
+            db.commit()
+
+@app.teardown_appcontext
+def close_connection(exception):
+    db = getattr(g, '_database', None)
+    if db is not None:
+        db.close()
+
+# ... existing User class and login_manager setup unchanged ...
+
+@app.route('/api/requests', methods=['POST'])
+@login_required
+def api_create_request():
+    if current_user.role != 'requester':
+        return jsonify({'error':'Unauthorized'}), 403
+    data = request.json
+    required = ['laptop_details','requester_name','company','contact','purpose','entry_date']
+    if not all(k in data for k in required):
+        return jsonify({'error':'Missing fields'}), 400
+
+    phone_pattern = re.compile(r'^\d{10}$')
+    if not phone_pattern.match(data['contact']):
+        return jsonify({'error':'Contact must be a 10-digit number.'}), 400
+
+    db = get_db()
+    c = db.cursor()
+    c.execute('''
+        INSERT INTO requests 
+        (laptop_details, requester_name, company, contact, purpose, entry_date, created_by) 
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    ''', (
+        data['laptop_details'], data['requester_name'],
+        data['company'], data['contact'], data['purpose'],
+        data['entry_date'], current_user.id
+    ))
+    db.commit()
+    new_request_id = c.lastrowid
+
+    # Send email notification to approver1(s)
+    approver1_emails = get_user_emails_by_role('approver1')
+    if approver1_emails:
+        subject = f"New Laptop Entry Request #{new_request_id} Awaiting Level 1 Approval"
+        body = f"""A new laptop entry request has been created.
+
+Request ID: {new_request_id}
+Requester: {data['requester_name']}
+Laptop Details: {data['laptop_details']}
+Company: {data['company']}
+Contact: {data['contact']}
+Purpose: {data['purpose']}
+Entry Date: {data['entry_date']}
+
+Please review and approve/deny the request at your earliest convenience.
+"""
+        send_email(subject, body, approver1_emails)
+
+    return jsonify({'message':'Request created'})
+
+@app.route('/api/requests/<int:req_id>/approve', methods=['POST'])
+@login_required
+def api_approve_request(req_id):
+    db = get_db()
+    c = db.cursor()
+    c.execute('SELECT * FROM requests WHERE id = ?', (req_id,))
+    req = c.fetchone()
+    if not req:
+        return jsonify({'error': 'Request not found'}), 404
+    role = current_user.role
+
+    data = request.json
+    action = data.get('action')
+    comment = data.get('comment', '').strip()
+
+    if action not in ['approve','deny']:
+        return jsonify({'error': 'Invalid action'}), 400
+
+    if role == 'approver1':
+        if req['status_level1'] != 'pending':
+            return jsonify({'error': 'Level 1 approval already done'}), 400
+        status_level1 = 'approved' if action == 'approve' else 'denied'
+        status_level2 = req['status_level2']
+        if status_level1 == 'denied':
+            status_level2 = 'denied'  # auto-deny level 2 too
+        c.execute('''
+            UPDATE requests 
+            SET status_level1 = ?, comments_level1 = ?, status_level2 = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+        ''', (status_level1, comment, status_level2, req_id))
+        db.commit()
+
+        # Notify requester about decision and (if approved) notify approver2
+        requester_email = get_user_email_by_id(req['created_by'])
+        requester_name = get_user_fullname_by_id(req['created_by']) or req['requester_name']
+        subject_req = f"Laptop Entry Request #{req_id} Level 1 {status_level1.capitalize()}"
+        body_req = f"""Hello {requester_name},
+
+Your laptop entry request #{req_id} has been {status_level1} at level 1 approval.
+
+Comments: {comment or 'No comments provided.'}
+
+Thank you.
+"""
+        if requester_email:
+            send_email(subject_req, body_req, [requester_email])
+
+        if status_level1 == 'approved':
+            # Notify approver2
+            approver2_emails = get_user_emails_by_role('approver2')
+            subject_appr2 = f"Laptop Entry Request #{req_id} Awaiting Level 2 Approval"
+            body_appr2 = f"""A laptop entry request has been approved at level 1 and awaits your final approval.
+
+Request ID: {req_id}
+Requester: {req['requester_name']}
+Laptop Details: {req['laptop_details']}
+Company: {req['company']}
+Contact: {req['contact']}
+Purpose: {req['purpose']}
+Entry Date: {req['entry_date']}
+Level 1 Comments: {comment or 'None'}
+
+Please review and approve/deny the request.
+
+Thank you.
+"""
+            if approver2_emails:
+                send_email(subject_appr2, body_appr2, approver2_emails)
+
+        return jsonify({'message': 'Level 1 approval updated'})
+
+    elif role == 'approver2':
+        if req['status_level1'] != 'approved':
+            return jsonify({'error': 'Level 1 approval not completed or denied'}), 400
+        if req['status_level2'] != 'pending':
+            return jsonify({'error': 'Level 2 approval already done'}), 400
+        status_level2 = 'approved' if action == 'approve' else 'denied'
+        c.execute('''
+            UPDATE requests
+            SET status_level2 = ?, comments_level2 = ?, updated_at = CURRENT_TIMESTAMP 
+            WHERE id = ?
+        ''', (status_level2, comment, req_id))
+        db.commit()
+
+        # Notify requester about final decision
+        requester_email = get_user_email_by_id(req['created_by'])
+        requester_name = get_user_fullname_by_id(req['created_by']) or req['requester_name']
+        subject_req = f"Laptop Entry Request #{req_id} Final {status_level2.capitalize()}"
+        body_req = f"""Hello {requester_name},
+
+Your laptop entry request #{req_id} has been {status_level2} by final approval.
+
+Level 2 Comments: {comment or 'No comments provided.'}
+
+Thank you.
+"""
+        if requester_email:
+            send_email(subject_req, body_req, [requester_email])
+
+        return jsonify({'message': 'Level 2 approval updated'})
+    else:
+        return jsonify({'error': 'Unauthorized'}), 403
+
+# The rest of your app.py stays unchanged (login, logout, users APIs, CSV export, etc.)
+
+if __name__ == '__main__':
+    if not os.path.exists(DATABASE):
+        init_db()
+    app.run(host='0.0.0.0', port=5000, debug=True)
