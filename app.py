@@ -4,7 +4,11 @@ import csv
 import io
 import re
 import smtplib
+import secrets
+from pathlib import Path
+from datetime import datetime, timedelta
 from email.message import EmailMessage
+import gevent
 from gevent.pywsgi import WSGIServer
 
 from flask import (
@@ -25,7 +29,10 @@ login_manager = LoginManager()
 login_manager.login_view = 'login'
 login_manager.init_app(app)
 
-DATABASE = './data_center_approval.db'
+# Get the absolute path to the database file
+BASE_DIR = Path(__file__).resolve().parent
+DATABASE = str(BASE_DIR / 'data_center_approval.db')
+#DATABASE = './data_center_approval.db'
 
 # === SMTP Email Configuration ===
 # You should replace these values with your actual SMTP server details.
@@ -75,60 +82,88 @@ def get_user_emails_by_role(role):
 def get_db():
     db = getattr(g, '_database', None)
     if db is None:
-        db = g._database = sqlite3.connect(DATABASE)
-        db.row_factory = sqlite3.Row
+        try:
+            db = g._database = sqlite3.connect(DATABASE)
+            db.row_factory = sqlite3.Row
+        except sqlite3.OperationalError as e:
+            app.logger.error(f"Database connection error: {e}")
+            # Ensure the directory exists and has proper permissions
+            os.makedirs(os.path.dirname(DATABASE), exist_ok=True)
+            # Try connecting again
+            db = g._database = sqlite3.connect(DATABASE)
+            db.row_factory = sqlite3.Row
     return db
+
 
 def init_db():
     with app.app_context():
-        db = get_db()
-        c = db.cursor()
-        # Users table
-        c.execute('''
-            CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT UNIQUE NOT NULL,
-                password_hash TEXT NOT NULL,
-                role TEXT NOT NULL CHECK(role IN ('requester','approver1','approver2','admin')),
-                full_name TEXT NOT NULL,
-                email_address TEXT  NOT NULL
-                
-            )
-        ''')
-        # Requests table
-        c.execute('''
-            CREATE TABLE IF NOT EXISTS requests (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                laptop_details TEXT NOT NULL,
-                requester_name TEXT NOT NULL,
-                company TEXT NOT NULL,
-                contact TEXT NOT NULL,
-                purpose TEXT NOT NULL,
-                serial_no TEXT NOT NULL,
-                entry_date TEXT NOT NULL,
-                status_level1 TEXT NOT NULL CHECK(status_level1 IN ('pending','approved','denied')) DEFAULT 'pending',
-                comments_level1 TEXT,
-                status_level2 TEXT NOT NULL CHECK(status_level2 IN ('pending','approved','denied')) DEFAULT 'pending',
-                comments_level2 TEXT,
-                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                created_by INTEGER NOT NULL,
-                FOREIGN KEY(created_by) REFERENCES users(id)
-            )
-        ''')
-        db.commit()
-        # Create demo users if table empty
-        c.execute('SELECT COUNT(*) FROM users')
-        if c.fetchone()[0] == 0:
-            # Add demo users with hashed passwords: password is 'password123' for all
-            users = [
-                ('DRDC', generate_password_hash('ongc@123'), 'requester', 'Control Room','agarwal_anant@ongc.co.in'),
-                ('KP', generate_password_hash('ongc@123'), 'approver1', 'KP','agarwal_anant@ongc.co.in'),
-                ('RP', generate_password_hash('ongc@123'), 'approver2', 'Incharge','agarwal_anant@ongc.co.in'),
-                ('anant', generate_password_hash('ongc@123'), 'admin', 'Admin','agarwal_anant@ongc.co.in')
-            ]
-            c.executemany('INSERT INTO users (username, password_hash, role, full_name, email_address) VALUES (?, ?, ?, ?, ?)', users)
+        try:
+            db = get_db()
+            c = db.cursor()
+            # Users table
+            c.execute('''
+                CREATE TABLE IF NOT EXISTS users (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    username TEXT UNIQUE NOT NULL,
+                    password_hash TEXT NOT NULL,
+                    role TEXT NOT NULL CHECK(role IN ('requester','approver1','approver2','admin')),
+                    full_name TEXT NOT NULL,
+                    email_address TEXT  NOT NULL,
+                    reset_token TEXT,
+                    reset_token_expiry TEXT
+                )
+            ''')
+            # Requests table
+            c.execute('''
+                CREATE TABLE IF NOT EXISTS requests (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    laptop_details TEXT NOT NULL,
+                    requester_name TEXT NOT NULL,
+                    company TEXT NOT NULL,
+                    contact TEXT NOT NULL,
+                    purpose TEXT NOT NULL,
+                    serial_no TEXT NOT NULL,
+                    entry_date TEXT NOT NULL,
+                    status_level1 TEXT NOT NULL CHECK(status_level1 IN ('pending','approved','denied')) DEFAULT 'pending',
+                    comments_level1 TEXT,
+                    status_level2 TEXT NOT NULL CHECK(status_level2 IN ('pending','approved','denied')) DEFAULT 'pending',
+                    comments_level2 TEXT,
+                    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    created_by INTEGER NOT NULL,
+                    FOREIGN KEY(created_by) REFERENCES users(id)
+                )
+            ''')
             db.commit()
+            # Create demo users if table empty
+            c.execute('SELECT COUNT(*) FROM users')
+            if c.fetchone()[0] == 0:
+                # Add demo users with hashed passwords: password is 'password123' for all
+                users = [
+                    ('DRDC', generate_password_hash('ongc@123'), 'requester', 'Control Room','agarwal_anant@ongc.co.in'),
+                    ('KP', generate_password_hash('ongc@123'), 'approver1', 'KP','agarwal_anant@ongc.co.in'),
+                    ('RP', generate_password_hash('ongc@123'), 'approver2', 'Incharge','agarwal_anant@ongc.co.in'),
+                    ('anant', generate_password_hash('ongc@123'), 'admin', 'Admin','agarwal_anant@ongc.co.in')
+                ]
+                c.executemany('INSERT INTO users (username, password_hash, role, full_name, email_address) VALUES (?, ?, ?, ?, ?)', users)
+                db.commit()
+        except Exception as e:
+            app.logger.error(f"Error initializing database: {e}")
+            raise
+
+
+
+
+
+
+
+redirect_app = Flask('redirect_app')
+
+@redirect_app.before_request
+def redirect_to_https():
+    # Redirect all requests to HTTPS URL
+    url = request.url.replace("http://", "https://", 1)
+    return redirect(url, code=301)
 
 
 @app.teardown_appcontext
@@ -326,6 +361,7 @@ def api_create_request():
     if approver1_emails:
         print("##################")
         print(approver1_emails)
+        openurl = url_for('login')
         subject = f"New Laptop Entry Request #{new_request_id} Awaiting Level 1 Approval"
         body = f"""A new laptop entry request has been created.
         Request ID: {new_request_id}
@@ -336,7 +372,7 @@ def api_create_request():
         Purpose: {data['purpose']}
         serial_no: {data['serial_no']}
         Entry Date: {data['entry_date']}
-        Please review and approve/deny the request at your earliest convenience."""
+        Please review and approve/deny the request at your earliest convenience:: https://10.205.241.46{openurl}    """
         send_email(subject, body, approver1_emails)
     return jsonify({'message':'Request created'})
 
@@ -407,10 +443,11 @@ def api_approve_request(req_id):
             if approver2_emails:
                 print("################")
                 print(approver2_emails)
+                openurl = url_for('login')
                 subject = f"New Laptop Entry Request #{req_id} Awaiting Level 2 Approval"
                 body = f"""A new laptop entry request has been created.
                 Request ID: {req_id}
-                Please review and approve/deny the request at your earliest convenience."""
+                Please review and approve/deny the request at your earliest convenience. https://10.205.241.46{openurl}"""
                 send_email(subject, body, approver2_emails)
 
         else:
@@ -482,7 +519,7 @@ def api_export_requests_csv():
         cw = csv.writer(output)
         
         # Write the header row
-        cw.writerow(['ID', 'Laptop Details', 'Requester Name', 'Company', 'Contact', 'Purpose', 'Entry Date', 'Level 1 Status', 'Level 1 Comments', 'Level 2 Status', 'Level 2 Comments', 'Created At', 'Updated At'])
+        cw.writerow(['ID', 'Laptop Details', 'Requester Name', 'Company', 'Contact', 'Purpose','serial_no' ,'Entry Date', 'Level 1 Status', 'Level 1 Comments', 'Level 2 Status', 'Level 2 Comments', 'Created At', 'Updated At'])
 
         # Write data rows
         for r in rows:
@@ -493,6 +530,7 @@ def api_export_requests_csv():
                 r['company'],
                 r['contact'],
                 r['purpose'],
+                r['serial_no'],
                 r['entry_date'],
                 r['status_level1'],
                 r['comments_level1'],
@@ -515,9 +553,92 @@ def api_export_requests_csv():
 
 
 
+def generate_reset_token():
+    """Generate a secure random token for password reset"""
+    return secrets.token_urlsafe(32)
+
+def send_password_reset_email(user_email, reset_token):
+    """Send password reset email to user"""
+    reset_url = url_for('reset_password', token=reset_token, _external=True)
+    subject = "Password Reset Request"
+    body = f"""To reset your password, visit the following link:
+{reset_url}
+
+If you did not make this request then simply ignore this email and no changes will be made.
+"""
+    send_email(subject, body, [user_email])
+
+@app.route('/reset-password-request', methods=['GET', 'POST'])
+def reset_password_request():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    
+    if request.method == 'POST':
+        email = request.form.get('email')
+        db = get_db()
+        c = db.cursor()
+        c.execute('SELECT * FROM users WHERE email_address = ?', (email,))
+        user = c.fetchone()
+        
+        if user:
+            token = generate_reset_token()
+            expiry = datetime.utcnow() + timedelta(hours=1)
+            c.execute('UPDATE users SET reset_token = ?, reset_token_expiry = ? WHERE id = ?',
+                     (token, expiry.isoformat(), user['id']))
+            db.commit()
+            send_password_reset_email(user['email_address'], token)
+            flash('Check your email for instructions to reset your password.', 'info')
+            return redirect(url_for('login'))
+        
+        flash('Email address not found.', 'danger')
+    return render_template('reset_password_request.html')
+
+@app.route('/reset-password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    
+    db = get_db()
+    c = db.cursor()
+    c.execute('SELECT * FROM users WHERE reset_token = ?', (token,))
+    user = c.fetchone()
+    
+    if not user or not user['reset_token_expiry']:
+        flash('Invalid or expired reset token.', 'danger')
+        return redirect(url_for('reset_password_request'))
+    
+    expiry = datetime.fromisoformat(user['reset_token_expiry'])
+    if datetime.utcnow() > expiry:
+        flash('Reset token has expired.', 'danger')
+        return redirect(url_for('reset_password_request'))
+    
+    if request.method == 'POST':
+        password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')
+        
+        if password != confirm_password:
+            flash('Passwords do not match.', 'danger')
+            return render_template('reset_password.html')
+        
+        password_hash = generate_password_hash(password)
+        c.execute('UPDATE users SET password_hash = ?, reset_token = NULL, reset_token_expiry = NULL WHERE id = ?',
+                 (password_hash, user['id']))
+        db.commit()
+        flash('Your password has been reset. You can now log in.', 'success')
+        return redirect(url_for('login'))
+    
+    return render_template('reset_password.html')
+
+
+
 if __name__ == '__main__':
     if not os.path.exists(DATABASE):
         init_db()
-    app.run(host='0.0.0.0', port=8080, debug=True)
-    #http_server = WSGIServer(('0.0.0.0', 8080), app)
+    #app.run(host='0.0.0.0', port=8080, debug=True)
+    https_server = WSGIServer(('0.0.0.0', 443), app, certfile='server.pem',keyfile='serverkey.pem')
+    http_server = WSGIServer(('0.0.0.0', 80), redirect_app)
+    
     #http_server.serve_forever()
+    gevent.joinall([
+        gevent.spawn(http_server.serve_forever),
+        gevent.spawn(https_server.serve_forever),])
