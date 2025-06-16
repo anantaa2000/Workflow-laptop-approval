@@ -1,0 +1,1253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Data Center Laptop Entry Approval</title>
+<style>
+  :root {
+    --color-bg: #ffffff;
+    --color-primary: #111827;
+    --color-accent: #3b82f6;
+    --color-muted: #6b7280;
+    --color-success: #10b981;
+    --color-danger: #ef4444;
+    --color-warning: #f59e0b;
+    --color-lightgray: #f9fafb;
+    --color-border: #e5e7eb;
+    --radius: 0.75rem;
+    --font-sans: "Inter", "Poppins", -apple-system, BlinkMacSystemFont,
+      "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --transition: 0.3s ease;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    font-family: var(--font-sans);
+    background-color: var(--color-bg);
+    color: var(--color-primary);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  a {
+    color: var(--color-accent);
+    text-decoration: none;
+  }
+
+  a:hover,
+  button:hover {
+    text-decoration: underline;
+  }
+
+  h1,
+  h2,
+  h3 {
+    margin-top: 0;
+    font-weight: 700;
+  }
+
+  h1 {
+    font-size: 3rem;
+    margin-bottom: 0.25em;
+  }
+
+  h2 {
+    font-size: 2rem;
+    margin-bottom: 0.5em;
+  }
+
+  h3 {
+    font-size: 1.25rem;
+    margin-bottom: 0.75em;
+  }
+
+  p {
+    color: var(--color-muted);
+    margin-top: 0;
+    margin-bottom: 1rem;
+  }
+
+  button {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: var(--radius);
+    border: none;
+    transition: background-color var(--transition), transform var(--transition),
+      box-shadow var(--transition);
+  }
+
+  button:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  .container {
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 1.5rem;
+  }
+
+  header {
+    background-color: var(--color-bg);
+    border-bottom: 1px solid var(--color-border);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    backdrop-filter: saturate(180%) blur(10px);
+  }
+
+  nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 4.5rem;
+    padding: 0 1.5rem;
+  }
+
+  .logo {
+    font-weight: 800;
+    font-size: 1.5rem;
+    color: var(--color-primary);
+    letter-spacing: 0.05em;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 1rem;
+  }
+
+  .nav-links button {
+    background-color: transparent;
+    color: var(--color-primary);
+    font-size: 1rem;
+    padding: 0.4rem 1rem;
+    border-radius: var(--radius);
+    transition: background-color var(--transition);
+  }
+
+  .nav-links button:hover {
+    background-color: var(--color-lightgray);
+  }
+
+  main {
+    padding-top: 2rem;
+    padding-bottom: 3rem;
+  }
+
+  .card {
+    background-color: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.1);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .card:hover {
+    box-shadow: 0 5px 15px rgb(59 130 246 / 0.3);
+  }
+
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  label {
+    font-weight: 600;
+    color: var(--color-primary);
+  }
+
+  input,
+  select,
+  textarea {
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    background-color: white;
+    color: var(--color-primary);
+    transition: border-color var(--transition);
+    resize: vertical;
+  }
+
+  input:focus,
+  select:focus,
+  textarea:focus {
+    outline: none;
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 2px rgb(59 130 246 / 0.3);
+  }
+
+  .btn-primary {
+    background-color: var(--color-accent);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    align-self: flex-start;
+    box-shadow: 0 4px 8px rgb(59 130 246 / 0.4);
+  }
+
+  .btn-primary:hover {
+    background-color: #2563eb;
+    transform: scale(1.05);
+  }
+
+  .btn-secondary {
+    background-color: var(--color-lightgray);
+    color: var(--color-primary);
+    padding: 0.5rem 1rem;
+  }
+
+  .btn-secondary:hover {
+    background-color: #d1d5db;
+  }
+
+  .btn-danger {
+    background-color: var(--color-danger);
+    color: white;
+    padding: 0.5rem 1rem;
+  }
+
+  .btn-danger:hover {
+    background-color: #b91c1c;
+  }
+
+  .btn-success {
+    background-color: var(--color-success);
+    color: white;
+    padding: 0.5rem 1rem;
+  }
+
+  .btn-success:hover {
+    background-color: #047857;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.1);
+  }
+
+  th,
+  td {
+    text-align: left;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  th {
+    background-color: var(--color-lightgray);
+    font-weight: 700;
+    font-size: 1rem;
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  .status {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius);
+    color: white;
+    font-weight: 700;
+    text-align: center;
+    min-width: 6rem;
+  }
+
+  .status-pending {
+    background-color: var(--color-warning);
+  }
+
+  .status-approved {
+    background-color: var(--color-success);
+  }
+
+  .status-denied {
+    background-color: var(--color-danger);
+  }
+
+  .comment-box {
+    width: 100%;
+    min-height: 4rem;
+  }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
+
+  @media (max-width: 768px) {
+    .grid-2 {
+      grid-template-columns: 1fr;
+    }
+
+    nav .nav-links {
+      display: none;
+    }
+  }
+
+  .table-container {
+    overflow-x: auto;
+  }
+
+  .small-text {
+    font-size: 0.85rem;
+    color: var(--color-muted);
+  }
+
+  .label-inline {
+    display: inline-block;
+    font-weight: 600;
+    margin-right: 0.5rem;
+  }
+
+  .message {
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius);
+    margin-bottom: 1rem;
+    font-weight: 600;
+  }
+
+  .message-error {
+    background-color: var(--color-danger);
+    color: white;
+  }
+
+  .message-success {
+    background-color: var(--color-success);
+    color: white;
+  }
+
+  .card,
+  button {
+    transition: box-shadow var(--transition), transform var(--transition),
+      background-color var(--transition);
+  }
+
+  .btn-link {
+    background: none;
+    color: var(--color-accent);
+    padding: 0;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1rem;
+  }
+
+  .btn-link:hover {
+    text-decoration: underline;
+  }
+  
+</style>
+</head>
+<body>
+<header>
+  <nav class="container" aria-label="Primary Navigation">
+    <div class="logo" tabindex="0">Laptop Entry Approval</div>
+    <div class="nav-links" id="navLinks"></div>
+  </nav>
+</header>
+
+
+
+<main class="container" id="app"></main>
+<footer> <div class="footer">  Developed by Anant  </div></footer>
+
+<script>
+  const API_PREFIX = '/api';
+
+  let currentUser = null;
+
+  async function apiFetch(endpoint, options = {}) {
+    try {
+      const res = await fetch(endpoint, {
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        ...options
+      });
+      if(!res.ok){
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Request error');
+      }
+      return res.json();
+    } catch (err) {
+      alert('Error: ' + err.message);
+      throw err;
+    }
+  }
+
+  // Initialization
+  document.addEventListener('DOMContentLoaded', () => {
+    fetchUser();
+  });
+
+  async function fetchUser(){
+    try {
+      currentUser = await apiFetch(API_PREFIX + '/user');
+    } catch {
+      // Not logged in, redirect to login
+      window.location.href = '/login';
+      return;
+    }
+    renderHeaderNav();
+    renderMain();
+  }
+
+  function renderHeaderNav(){
+    const navLinks = document.getElementById('navLinks');
+    navLinks.innerHTML = '';
+
+    if(!currentUser){
+      const loginLink = document.createElement('a');
+      loginLink.href = '/login';
+      loginLink.textContent = 'Login';
+      navLinks.appendChild(loginLink);
+      return;
+    }
+
+    // Create nav buttons by role
+    navLinks.appendChild(createNavButton('Dashboard', () => renderMain('dashboard')));
+    
+    if(currentUser.role === 'requester'){
+      navLinks.appendChild(createNavButton('Create Request', () => renderMain('createRequest')));
+    }
+    if(currentUser.role === 'admin'){
+      navLinks.appendChild(createNavButton('Admin Panel', () => renderMain('admin')));
+    }
+    navLinks.appendChild(createNavButton('Logout', () => { window.location.href = '/logout'; }));
+  }
+
+  function createNavButton(text, onClick){
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn-link';
+    btn.textContent = text;
+    btn.addEventListener('click', onClick);
+    return btn;
+  }
+
+  function clearMain(){
+    document.getElementById('app').innerHTML = '';
+  }
+
+  async function renderMain(view = 'dashboard'){
+    clearMain();
+    switch(view){
+      case 'createRequest':
+        if(currentUser.role === 'requester'){
+          await renderRequestForm();
+        } else {
+          renderMessage('Access denied.', 'error');
+        }
+        break;
+      case 'admin':
+        if(currentUser.role === 'admin'){
+          await renderAdminPanel();
+        } else {
+          renderMessage('Access denied.', 'error');
+        }
+        break;
+      case 'dashboard':
+      default:
+        if(currentUser.role === 'requester'){
+          await renderRequesterDashboard();
+        } else if(currentUser.role === 'approver1'){
+          await renderApprover1Dashboard();
+        } else if(currentUser.role === 'approver2'){
+          await renderApprover2Dashboard();
+        } else if(currentUser.role === 'admin'){
+          await renderAdminDashboard();
+        } else {
+          renderMessage('Invalid user role.', 'error');
+        }
+    }
+  }
+
+  function renderMessage(msg, type = 'success'){
+    const app = document.getElementById('app');
+    const div = document.createElement('div');
+    div.className = 'message';
+    div.classList.add(type === 'error' ? 'message-error' : 'message-success');
+    div.textContent = msg;
+    app.prepend(div);
+    setTimeout(() => {
+      if(div.parentElement) div.remove();
+    }, 5000);
+  }
+
+  // Requester views
+  async function renderRequestForm(){
+    const app = document.getElementById('app');
+
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    const h2 = document.createElement('h2');
+    h2.textContent = 'Create Laptop Entry Request';
+    card.appendChild(h2);
+
+    const form = document.createElement('form');
+    form.setAttribute('aria-label', 'Create Laptop Entry Request Form');
+
+    form.innerHTML = `
+      <label for="laptopDetails">Laptop Details:</label>
+      <textarea id="laptopDetails" name="laptop_details" placeholder="Model, brand, serial number" required rows="2"></textarea>
+      
+      <label for="requesterName">Requester Name:</label>
+      <input type="text" id="requesterName" name="requester_name" value="${escapeHtml(currentUser.full_name)}" required />
+      
+      <label for="company">Company:</label>
+      <input type="text" id="company" name="company" placeholder="Company or organization" required />
+      
+      <label for="contact">Contact Details:</label>
+      <input type="text" id="contact" name="contact" placeholder="Phone or email" required />
+      
+      <label for="purpose">Purpose:</label>
+      <textarea id="purpose" name="purpose" placeholder="Reason for laptop entry" required rows="2"></textarea>
+
+      <label for="serial_no">Serial_NO:</label>
+      <input type="text" id="serial_no" name="serial_no" placeholder="Serial no" required />
+      
+      <label for="entryDate">Date of Entry:</label>
+      <input type="date" id="entryDate" name="entry_date" required min="${new Date().toISOString().split('T')[0]}" />
+      
+      <button type="submit" class="btn-primary">Submit Request</button>
+    `;
+
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      const data = {
+        laptop_details: form.laptop_details.value.trim(),
+        requester_name: form.requester_name.value.trim(),
+        company: form.company.value.trim(),
+        contact: form.contact.value.trim(),
+        purpose: form.purpose.value.trim(),
+        serial_no: form.serial_no.value.trim(),
+        entry_date: form.entry_date.value
+      };
+      try {
+        await apiFetch(API_PREFIX + '/requests', {
+          method: 'POST',
+          body: JSON.stringify(data)
+        });
+        renderMessage('Request created successfully!', 'success');
+        form.reset();
+        form.requester_name.value = currentUser.full_name;
+      } catch (err) {
+        renderMessage(err.message || 'Failed to create request', 'error');
+      }
+    });
+
+    card.appendChild(form);
+    app.appendChild(card);
+  }
+
+  async function renderRequesterDashboard(){
+    const app = document.getElementById('app');
+    const card = document.createElement('div');
+    card.className = 'card';
+    const h2 = document.createElement('h2');
+    h2.textContent = 'My Laptop Entry Requests';
+    card.appendChild(h2);
+
+    let requests = [];
+    try {
+      requests = await apiFetch(API_PREFIX + '/requests');
+    } catch {
+      renderMessage('Failed to load requests', 'error');
+      return;
+    }
+
+    if(requests.length === 0){
+      const p = document.createElement('p');
+      p.textContent = 'No requests found. You can create a new request using the "Create Request" menu.';
+      card.appendChild(p);
+      app.appendChild(card);
+      return;
+    }
+
+    const tableContainer = document.createElement('div');
+    tableContainer.className = 'table-container';
+
+    const table = document.createElement('table');
+    const thead = document.createElement('thead');
+    thead.innerHTML = `
+      <tr>
+        <th>ID</th>
+        <th>Laptop Details</th>
+        <th>Entry Date</th>
+        <th>Level 1 Status</th>
+        <th>Level 2 Status</th>
+        <th>Actions</th>
+      </tr>`;
+    table.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+
+    requests.forEach(req => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+      <td>${req.id}</td>
+      <td>${escapeHtml(req.laptop_details)}</td>
+      <td>${req.entry_date}</td>
+      <td>${statusBadge(req.status_level1)}</td>
+      <td>${req.status_level1 === 'denied' ? 'N/A' : statusBadge(req.status_level2)}</td>
+      <td></td>`;
+      const detailsBtn = document.createElement('button');
+      detailsBtn.type = 'button';
+      detailsBtn.className = 'btn-link';
+      detailsBtn.textContent = 'View Details';
+      detailsBtn.addEventListener('click', () => {
+        showRequestDetails(req);
+      });
+      tr.querySelector('td:last-child').appendChild(detailsBtn);
+      tbody.appendChild(tr);
+    });
+
+    table.appendChild(tbody);
+    tableContainer.appendChild(table);
+    card.appendChild(tableContainer);
+    app.appendChild(card);
+  }
+
+  // Approver 1 dashboard
+  async function renderApprover1Dashboard(){
+    const app = document.getElementById('app');
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    const h2 = document.createElement('h2');
+    h2.textContent = 'Requests Pending Level 1 Approval';
+    card.appendChild(h2);
+
+    let requests = [];
+    try {
+      requests = await apiFetch(API_PREFIX + '/requests');
+    } catch {
+      renderMessage('Failed to load requests', 'error');
+      return;
+    }
+
+    const pendingRequests = requests.filter(r => r.status_level1 === 'pending');
+
+    if(pendingRequests.length === 0) {
+      const p = document.createElement('p');
+      p.textContent = 'No requests pending level 1 approval';
+      card.appendChild(p);
+      app.appendChild(card);
+      return;
+    }
+
+    const tableContainer = document.createElement('div');
+    tableContainer.className = 'table-container';
+
+    const table = document.createElement('table');
+    const thead = document.createElement('thead');
+    thead.innerHTML = `
+      <tr>
+        <th>ID</th>
+        <th>Laptop Details</th>
+        <th>Requester</th>
+        <th>Entry Date</th>
+        <th>Actions</th>
+      </tr>`;
+    table.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+    pendingRequests.forEach(req => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+      <td>${req.id}</td>
+      <td>${escapeHtml(req.laptop_details)}</td>
+      <td>${escapeHtml(req.requester_name)}</td>
+      <td>${req.entry_date}</td>
+      <td></td>`;
+      const approveBtn = document.createElement('button');
+      approveBtn.type = 'button';
+      approveBtn.className = 'btn-success';
+      approveBtn.textContent = 'Approve';
+      approveBtn.addEventListener('click', () => {
+        showApproveModal(req, 'approver1', 'approve');
+      });
+      const denyBtn = document.createElement('button');
+      denyBtn.type = 'button';
+      denyBtn.className = 'btn-danger';
+      denyBtn.textContent = 'Deny';
+      denyBtn.addEventListener('click', () => {
+        showApproveModal(req, 'approver1', 'deny');
+      });
+      const cell = tr.querySelector('td:last-child');
+      cell.appendChild(approveBtn);
+      cell.appendChild(denyBtn);
+      tbody.appendChild(tr);
+    });
+
+    table.appendChild(tbody);
+    tableContainer.appendChild(table);
+    card.appendChild(tableContainer);
+    app.appendChild(card);
+  }
+
+  // Approver 2 dashboard
+  async function renderApprover2Dashboard() {
+    const app = document.getElementById('app');
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    const h2 = document.createElement('h2');
+    h2.textContent = 'Requests Pending Final Approval (Level 2)';
+    card.appendChild(h2);
+
+    let requests = [];
+    try {
+      requests = await apiFetch(API_PREFIX + '/requests');
+    } catch {
+      renderMessage('Failed to load requests', 'error');
+      return;
+    }
+
+    const pendingFinal = requests.filter(r => r.status_level1 === 'approved' && r.status_level2 === 'pending');
+
+    if(pendingFinal.length === 0) {
+      const p = document.createElement('p');
+      p.textContent = 'No requests pending final approval';
+      card.appendChild(p);
+      app.appendChild(card);
+      return;
+    }
+
+    const tableContainer = document.createElement('div');
+    tableContainer.className = 'table-container';
+
+    const table = document.createElement('table');
+    const thead = document.createElement('thead');
+    thead.innerHTML = `
+      <tr>
+        <th>ID</th>
+        <th>Laptop Details</th>
+        <th>Requester</th>
+        <th>Entry Date</th>
+        <th>Level 1 Comments</th>
+        <th>Actions</th>
+      </tr>`;
+    table.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+    pendingFinal.forEach(req => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+      <td>${req.id}</td>
+      <td>${escapeHtml(req.laptop_details)}</td>
+      <td>${escapeHtml(req.requester_name)}</td>
+      <td>${req.entry_date}</td>
+      <td>${escapeHtml(req.comments_level1 || '')}</td>
+      <td></td>`;
+      const approveBtn = document.createElement('button');
+      approveBtn.type = 'button';
+      approveBtn.className = 'btn-success';
+      approveBtn.textContent = 'Approve';
+      approveBtn.addEventListener('click', () => {
+        showApproveModal(req, 'approver2', 'approve');
+      });
+      const denyBtn = document.createElement('button');
+      denyBtn.type = 'button';
+      denyBtn.className = 'btn-danger';
+      denyBtn.textContent = 'Deny';
+      denyBtn.addEventListener('click', () => {
+        showApproveModal(req, 'approver2', 'deny');
+      });
+      const cell = tr.querySelector('td:last-child');
+      cell.appendChild(approveBtn);
+      cell.appendChild(denyBtn);
+      tbody.appendChild(tr);
+    });
+
+    table.appendChild(tbody);
+    tableContainer.appendChild(table);
+    card.appendChild(tableContainer);
+    app.appendChild(card);
+  }
+
+  // Admin panel dashboard stub (can show all requests)
+  async function renderAdminDashboard() {
+    const app = document.getElementById('app');
+    const card = document.createElement('div');
+    card.className = 'card';
+    const h2 = document.createElement('h2');
+    h2.textContent = 'Admin Dashboard';
+    card.appendChild(h2);
+    const p = document.createElement('p');
+    p.textContent = 'Use the Admin Panel to monitor all requests and manage users.';
+    card.appendChild(p);
+    app.appendChild(card);
+  }
+
+  // Admin panel user and requests management
+  async function renderAdminPanel(){
+    const app = document.getElementById('app');
+    app.innerHTML = '';
+    const div = document.createElement('div');
+
+    // User management section
+    const userCard = document.createElement('div');
+    userCard.className = 'card';
+    const h3Users = document.createElement('h3');
+    h3Users.textContent = 'User Management';
+    userCard.appendChild(h3Users);
+
+    // Users table container
+    const userTableContainer = document.createElement('div');
+    userTableContainer.className = 'table-container';
+    const userTable = document.createElement('table');
+    userTable.innerHTML = `
+      <thead>
+        <tr>
+          <th>ID</th><th>Username</th><th>Full Name</th><th>Role</th><th>Email</th><th>Actions</th>
+        </tr>
+      </thead>`;
+    const userTbody = document.createElement('tbody');
+    userTable.appendChild(userTbody);
+    userTableContainer.appendChild(userTable);
+    userCard.appendChild(userTableContainer);
+
+    // Add new user form
+    const addUserForm = document.createElement('form');
+    addUserForm.innerHTML = `
+      <h4>Add New User</h4>
+      <label>Username: <input name="username" required /></label><br/>
+      <label>Password: <input name="password" type="password" required /></label><br/>
+      <label>Full Name: <input name="full_name" required /></label><br/>
+      <label>Role:
+        <select name="role" required>
+          <option value="requester">Requester</option>
+          <option value="approver1">Approver Level 1</option>
+          <option value="approver2">Approver Level 2</option>
+          <option value="admin">Admin</option>
+        </select>
+      </label><br/>
+      <label>Email: <input name="email_address" required /></label><br/>
+      <button type="submit" class="btn-primary">Add User</button>
+    `;
+    userCard.appendChild(addUserForm);
+
+    // Load users and populate table
+    async function loadUsers(){
+      userTbody.innerHTML = '';
+      try {
+        const users = await apiFetch(API_PREFIX + '/users');
+        for(const u of users){
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${u.id}</td>
+            <td>${escapeHtml(u.username)}</td>
+            <td><input class="full-name-input" data-id="${u.id}" value="${escapeHtml(u.full_name)}" /></td>
+            <td>
+              <select class="role-select" data-id="${u.id}">
+                <option value="requester"${u.role==='requester'?' selected':''}>Requester</option>
+                <option value="approver1"${u.role==='approver1'?' selected':''}>Approver 1</option>
+                <option value="approver2"${u.role==='approver2'?' selected':''}>Approver 2</option>
+                <option value="admin"${u.role==='admin'?' selected':''}>Admin</option>
+              </select>
+            </td>
+            <td><input class="email_address" data-id="${u.id}" value="${escapeHtml(u.email_address)}" /></td>
+            <td><button type="button" class="btn-danger" data-id="${u.id}">Delete</button></td>
+          `;
+          userTbody.appendChild(tr);
+        }
+
+        // Attach event handlers for role and name change and delete
+        userTbody.querySelectorAll('.role-select').forEach(sel => {
+          sel.addEventListener('change', async e => {
+            const id = e.target.dataset.id;
+            try {
+              await apiFetch(API_PREFIX + '/users/' + id, {
+                method: 'PUT',
+                body: JSON.stringify({ role: e.target.value })
+              });
+              renderMessage('User role updated', 'success');
+              await loadUsers();
+            } catch(e) {
+              renderMessage(e.message, 'error');
+            }
+          });
+        });
+
+        userTbody.querySelectorAll('.full-name-input').forEach(input => {
+          input.addEventListener('blur', async e => {
+            const id = e.target.dataset.id;
+            try {
+              await apiFetch(API_PREFIX + '/users/' + id, {
+                method: 'PUT',
+                body: JSON.stringify({ full_name: e.target.value.trim() })
+              });
+              renderMessage('User full name updated', 'success');
+              await loadUsers();
+            } catch(e) {
+              renderMessage(e.message, 'error');
+            }
+          });
+        });
+
+        userTbody.querySelectorAll('.email_address').forEach(input => {
+          input.addEventListener('blur', async e => {
+            const id = e.target.dataset.id;
+            try {
+              await apiFetch(API_PREFIX + '/users/' + id, {
+                method: 'PUT',
+                body: JSON.stringify({ email_address: e.target.value.trim() })
+              });
+              renderMessage('User email updated', 'success');
+              await loadUsers();
+            } catch(e) {
+              renderMessage(e.message, 'error');
+            }
+          });
+        });        
+
+        userTbody.querySelectorAll('button.btn-danger').forEach(btn => {
+          btn.addEventListener('click', async e => {
+            const id = e.target.dataset.id;
+            if(!confirm('Are you sure you want to delete this user?')) return;
+            try {
+              await apiFetch(API_PREFIX + '/users/' + id, { method: 'DELETE' });
+              renderMessage('User deleted', 'success');
+              await loadUsers();
+            } catch(e) {
+              renderMessage(e.message, 'error');
+            }
+          });
+        });
+
+      } catch(e) {
+        renderMessage('Failed to load users', 'error');
+      }
+    }
+
+    // Add user form submit
+    addUserForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      const f = new FormData(addUserForm);
+      const data = {
+        username: f.get('username').trim(),
+        password: f.get('password'),
+        full_name: f.get('full_name').trim(),
+        role: f.get('role'),
+        email_address : f.get('email_address').trim()
+      };
+      try {
+        await apiFetch(API_PREFIX + '/users', {
+          method: 'POST',
+          body: JSON.stringify(data)
+        });
+        renderMessage('User added successfully', 'success');
+        addUserForm.reset();
+        loadUsers();
+      } catch(e) {
+        renderMessage(e.message, 'error');
+      }
+    });
+
+    await loadUsers();
+
+    div.appendChild(userCard);
+    app.appendChild(div);
+  }
+
+  // Show request details modal
+  function showRequestDetails(req){
+    const existingModal = document.getElementById('modalOverlay');
+    if(existingModal) existingModal.remove();
+    const overlay = document.createElement('div');
+    overlay.id = 'modalOverlay';
+    overlay.style.position = 'fixed';
+    overlay.style.top = 0;
+    overlay.style.left = 0;
+    overlay.style.width = '100vw';
+    overlay.style.height = '100vh';
+    overlay.style.backgroundColor = 'rgba(0,0,0,0.4)';
+    overlay.style.display = 'flex';
+    overlay.style.justifyContent = 'center';
+    overlay.style.alignItems = 'center';
+    overlay.style.zIndex = 9999;
+
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.style.width = '90vw';
+    card.style.maxWidth = '600px';
+    card.style.maxHeight = '80vh';
+    card.style.overflowY = 'auto';
+    card.setAttribute('role', 'dialog');
+    card.setAttribute('aria-modal', 'true');
+    card.setAttribute('aria-labelledby', 'dialogTitle');
+
+    const h3 = document.createElement('h3');
+    h3.id = 'dialogTitle';
+    h3.textContent = `Request Details (ID: ${req.id})`;
+    card.appendChild(h3);
+
+    const dl = document.createElement('dl');
+    dl.style.marginBottom = '1rem';
+
+    function addDetail(label, value){
+      const dt = document.createElement('dt');
+      dt.style.fontWeight = '600';
+      dt.style.marginTop = '0.5rem';
+      dt.textContent = label;
+      const dd = document.createElement('dd');
+      dd.style.marginLeft = '1rem';
+      dd.textContent = value;
+      dl.appendChild(dt);
+      dl.appendChild(dd);
+    }
+
+    addDetail('Laptop Details:', req.laptop_details);
+    addDetail('Requester Name:', req.requester_name);
+    addDetail('Company:', req.company);
+    addDetail('Contact:', req.contact);
+    addDetail('Purpose:', req.purpose);
+    addDetail('serial_no:', req.serial_no);
+    addDetail('Entry Date:', req.entry_date);
+    addDetail('Created At:', req.created_at || '');
+    addDetail('Level 1 Status:', capitalize(req.status_level1));
+    addDetail('Level 1 Comments:', req.comments_level1 || 'None');
+    addDetail('Level 2 Status:', req.status_level1 === 'denied' ? 'N/A' : capitalize(req.status_level2));
+    addDetail('Level 2 Comments:', req.comments_level2 || 'None');
+
+    card.appendChild(dl);
+
+    const btnClose = document.createElement('button');
+    btnClose.type = 'button';
+    btnClose.className = 'btn-secondary';
+    btnClose.textContent = 'Close';
+    btnClose.addEventListener('click', () => overlay.remove());
+    card.appendChild(btnClose);
+
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+
+    // Focus trap
+    const focusables = card.querySelectorAll('a[href], button:not([disabled]), textarea, input, select');
+    if(focusables.length) {
+      focusables[0].focus();
+    }
+  }
+
+  // Show modal for approve or deny with comment
+  function showApproveModal(req, approverRole, action){
+    const existingModal = document.getElementById('modalOverlay');
+    if(existingModal) existingModal.remove();
+    const overlay = document.createElement('div');
+    overlay.id = 'modalOverlay';
+    overlay.style.position = 'fixed';
+    overlay.style.top = 0;
+    overlay.style.left = 0;
+    overlay.style.width = '100vw';
+    overlay.style.height = '100vh';
+    overlay.style.backgroundColor = 'rgba(0,0,0,0.4)';
+    overlay.style.display = 'flex';
+    overlay.style.justifyContent = 'center';
+    overlay.style.alignItems = 'center';
+    overlay.style.zIndex = 9999;
+
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.style.width = '90vw';
+    card.style.maxWidth = '400px';
+    card.style.maxHeight = '70vh';
+    card.style.overflowY = 'auto';
+    card.setAttribute('role', 'dialog');
+    card.setAttribute('aria-modal', 'true');
+    card.setAttribute('aria-labelledby', 'modalTitle');
+
+    const h3 = document.createElement('h3');
+    h3.id = 'modalTitle';
+    h3.textContent = `${capitalize(action)} Request ID ${req.id} - Add Comment`;
+    card.appendChild(h3);
+
+    const form = document.createElement('form');
+
+    const label = document.createElement('label');
+    label.htmlFor = 'commentBox';
+    label.textContent = 'Comment (optional):';
+    form.appendChild(label);
+
+    const textarea = document.createElement('textarea');
+    textarea.id = 'commentBox';
+    textarea.name = 'comment';
+    textarea.rows = 5;
+    textarea.className = 'comment-box';
+    form.appendChild(textarea);
+
+    const btnContainer = document.createElement('div');
+    btnContainer.style.marginTop = '1rem';
+    btnContainer.style.display = 'flex';
+    btnContainer.style.justifyContent = 'space-between';
+    form.appendChild(btnContainer);
+
+    const submitBtn = document.createElement('button');
+    submitBtn.type = 'submit';
+    submitBtn.className = action === 'approve' ? 'btn-success' : 'btn-danger';
+    submitBtn.textContent = capitalize(action);
+    btnContainer.appendChild(submitBtn);
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className = 'btn-secondary';
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.addEventListener('click', () => overlay.remove());
+    btnContainer.appendChild(cancelBtn);
+
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      try {
+        await apiFetch(`${API_PREFIX}/requests/${req.id}/approve`, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: action,
+            comment: textarea.value.trim()
+          })
+        });
+        renderMessage(`Request ${capitalize(action)}d successfully!`, 'success');
+        overlay.remove();
+        renderMain(currentUser.role === 'requester' ? 'dashboard' : undefined);
+      } catch(err) {
+        renderMessage(err.message || 'Failed to submit approval', 'error');
+      }
+    });
+
+    card.appendChild(form);
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+
+    textarea.focus();
+  }
+
+  async function renderAdminDashboard(){
+    const app = document.getElementById('app');
+    app.innerHTML = '';
+
+    // User Management Section (existing)
+    const userCard = document.createElement('div');
+  
+    // Admin requests section
+    const requestsCard = document.createElement('div');
+    requestsCard.className = 'card';
+    const h3Requests = document.createElement('h3');
+    h3Requests.textContent = 'All Laptop Entry Requests';
+    requestsCard.appendChild(h3Requests);
+
+    // Add export CSV button for requests
+    const exportBtn = document.createElement('button');
+    exportBtn.className = 'btn-primary';
+    exportBtn.textContent = 'Export All Requests to CSV';
+    exportBtn.style.marginBottom = '1rem';
+    exportBtn.addEventListener('click', () => {
+      window.open(API_PREFIX + '/requests/export/csv', '_blank');
+    });
+    requestsCard.appendChild(exportBtn);
+
+    // Create requests table container and table element
+    const tableContainer = document.createElement('div');
+    tableContainer.className = 'table-container';
+    const table = document.createElement('table');
+    table.innerHTML = `
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Laptop Details</th>
+          <th>Requester Name</th>
+          <th>Company</th>
+          <th>Contact</th>
+          <th>Purpose</th>
+          <th>serial_no</th>
+          <th>Entry Date</th>
+          <th>Level 1 Status</th>
+          <th>Level 1 Comments</th>
+          <th>Level 2 Status</th>
+          <th>Level 2 Comments</th>
+          <th>Created At</th>
+          <th>Updated At</th>
+        </tr>
+      </thead>
+    `;
+    const tbody = document.createElement('tbody');
+    table.appendChild(tbody);
+    tableContainer.appendChild(table);
+    requestsCard.appendChild(tableContainer);
+
+    // Fetch and fill all requests for admin
+    try {
+      const requests = await apiFetch(API_PREFIX + '/requests');
+      requests.forEach(req => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${req.id}</td>
+          <td>${escapeHtml(req.laptop_details)}</td>
+          <td>${escapeHtml(req.requester_name)}</td>
+          <td>${escapeHtml(req.company)}</td>
+          <td>${escapeHtml(req.contact)}</td>
+          <td>${escapeHtml(req.purpose)}</td>
+          <td>${escapeHtml(req.serial_no)}</td>
+          <td>${req.entry_date}</td>
+          <td>${statusBadge(req.status_level1)}</td>
+          <td>${escapeHtml(req.comments_level1 || '')}</td>
+          <td>${statusBadge(req.status_level2)}</td>
+          <td>${escapeHtml(req.comments_level2 || '')}</td>
+          <td>${req.created_at || ''}</td>
+          <td>${req.updated_at || ''}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    } catch (err) {
+      requestsCard.appendChild(document.createTextNode('Failed to load requests.'));
+    }
+
+    app.appendChild(userCard);
+    app.appendChild(requestsCard);
+  }
+
+  // Helper functions
+  function capitalize(s){
+    if(!s) return '';
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+
+  function statusBadge(status){
+    switch(status){
+      case 'pending':
+        return '<span class="status status-pending" aria-label="Pending approval">Pending</span>';
+      case 'approved':
+        return '<span class="status status-approved" aria-label="Approved">Approved</span>';
+      case 'denied':
+        return '<span class="status status-denied" aria-label="Denied">Denied</span>';
+      default:
+        return `<span class="status">${status}</span>`;
+    }
+  }
+
+  // Escape HTML helper
+  function escapeHtml(text) {
+    if (!text) return '';
+    return text.replace(/[&<>"']/g, function(m) {
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];
+    });
+  }
+
+
+</script>
+</body>
+</html>
